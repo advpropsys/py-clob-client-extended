@@ -1,8 +1,12 @@
 import logging
+from typing import Union
+
+from py_order_utils.model import SignedOrder
 
 from .order_builder.builder import OrderBuilder
 
 from .headers.headers import create_level_1_headers, create_level_2_headers
+from .order_builder.constants import BUY, SELL
 from .signer import Signer
 
 from .endpoints import (
@@ -39,7 +43,7 @@ from .constants import L0, L1, L1_AUTH_UNAVAILABLE, L2, L2_AUTH_UNAVAILABLE
 class ClobClient:
     def __init__(
         self,
-        host,
+        host: str,
         chain_id: int = None,
         key: str = None,
         creds: ApiCreds = None,
@@ -166,13 +170,13 @@ class ClobClient:
         headers = create_level_2_headers(self.signer, self.creds, request_args)
         return delete("{}{}".format(self.host, DELETE_API_KEY), headers=headers)
 
-    def get_midpoint(self, token_id):
+    def get_midpoint(self, token_id: str):
         """
         Get the mid market price for the given market
         """
         return get("{}{}?token_id={}".format(self.host, MID_POINT, token_id))
 
-    def get_price(self, token_id, side):
+    def get_price(self, token_id: str, side: Union[BUY, SELL]):
         """
         Get the market price for the given market
         """
@@ -187,7 +191,7 @@ class ClobClient:
 
         return self.builder.create_order(order_args)
 
-    def post_order(self, order):
+    def post_order(self, order: SignedOrder):
         """
         Posts the order
         """
@@ -204,10 +208,10 @@ class ClobClient:
         """
         Utility function to create and publish an order
         """
-        ord = self.create_order(order_args)
-        return self.post_order(ord)
+        order = self.create_order(order_args)
+        return self.post_order(order)
 
-    def cancel(self, order_id):
+    def cancel(self, order_id: str):
         """
         Cancels an order
         Level 2 Auth required
@@ -240,13 +244,13 @@ class ClobClient:
         url = add_query_params("{}{}".format(self.host, ORDERS), params)
         return get(url, headers=headers)
 
-    def get_order_book(self, token_id):
+    def get_order_book(self, token_id: str):
         """
         Fetches the orderbook for the token_id
         """
         return get("{}{}?token_id={}".format(self.host, GET_ORDER_BOOK, token_id))
 
-    def get_order(self, order_id):
+    def get_order(self, order_id: str):
         """
         Fetches the order corresponding to the order_id
         Requires Level 2 authentication
@@ -268,7 +272,7 @@ class ClobClient:
         url = add_query_params("{}{}".format(self.host, TRADES), params)
         return get(url, headers=headers)
 
-    def get_last_trade_price(self, token_id):
+    def get_last_trade_price(self, token_id: str):
         """
         Fetches the last trade price token_id
         """
@@ -280,7 +284,7 @@ class ClobClient:
         """
         return get("{}{}".format(self.host, GET_MARKETS))
 
-    def get_market(self, condition_id):
+    def get_market(self, condition_id: str):
         """
         Get the given CLOB market
         """
