@@ -21,6 +21,8 @@ from .endpoints import (
     PRICE,
     TIME,
     TRADES,
+    GET_MARKETS,
+    GET_MARKET
 )
 from .clob_types import (
     ApiCreds,
@@ -263,7 +265,7 @@ class ClobClient:
         self.assert_level_2_auth()
         request_args = RequestArgs(method="GET", request_path=TRADES)
         headers = create_level_2_headers(self.signer, self.creds, request_args)
-        url = add_query_params("{}{}".format(self.host, TRADES), params) 
+        url = add_query_params("{}{}".format(self.host, TRADES), params)
         return get(url, headers=headers)
 
     def get_last_trade_price(self, token_id):
@@ -271,6 +273,18 @@ class ClobClient:
         Fetches the last trade price token_id
         """
         return get("{}{}?token_id={}".format(self.host, GET_LAST_TRADE_PRICE, token_id))
+
+    def get_markets(self):
+        """
+        Get all available CLOB markets
+        """
+        return get("{}{}".format(self.host, GET_MARKETS))
+
+    def get_market(self, condition_id):
+        """
+        Get the given CLOB market
+        """
+        return get("{}{}{}".format(self.host, GET_MARKET, condition_id))
 
     def assert_level_1_auth(self):
         """
