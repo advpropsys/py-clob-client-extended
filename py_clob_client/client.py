@@ -37,7 +37,9 @@ from .clob_types import (
 from .exceptions import PolyException
 from .http_helpers.helpers import add_query_params, delete, get, post
 from py_order_utils.config import get_contract_config
+from py_order_utils.model import BUY as UtilsBuy
 from .constants import L0, L1, L1_AUTH_UNAVAILABLE, L2, L2_AUTH_UNAVAILABLE
+from .order_builder.constants import BUY, SELL
 
 
 class ClobClient:
@@ -100,13 +102,6 @@ class ClobClient:
         """
         if self.contract_config:
             return self.contract_config.get_exchange()
-
-    def get_executor_address(self):
-        """
-        Returns the executor address
-        """
-        if self.contract_config:
-            return self.contract_config.get_executor()
 
     def get_ok(self):
         """

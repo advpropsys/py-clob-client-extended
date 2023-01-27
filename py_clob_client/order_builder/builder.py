@@ -1,9 +1,21 @@
 from py_order_utils.builders import OrderBuilder as UtilsOrderBuild
-from py_order_utils.model import EOA, OrderData, SignedOrder
+from py_order_utils.model import (
+    EOA,
+    OrderData,
+    SignedOrder,
+    BUY as UtilsBuy,
+    SELL as UtilsSell,
+)
 from py_order_utils.config import get_contract_config
 
-from .helpers import to_token_decimals
-from .constants import BUY
+from .helpers import (
+    to_token_decimals,
+    round_down,
+    round_normal,
+    decimal_places,
+    round_up,
+)
+from .constants import BUY, SELL
 
 from ..signer import Signer
 from ..clob_types import OrderArgs
@@ -28,18 +40,45 @@ class OrderBuilder:
     def _get_contract_config(self, chain_id: int):
         return get_contract_config(chain_id)
 
+    def get_order_amounts(self, side: str, size: float, price: float):
+        raw_price = round_normal(price, 2)
+
+        if side == BUY:
+            raw_taker_amt = round_down(size, 2)
+
+            raw_maker_amt = raw_taker_amt * raw_price
+            if decimal_places(raw_maker_amt) > 4:
+                raw_maker_amt = round_up(raw_maker_amt, 8)
+                if decimal_places(raw_maker_amt) > 4:
+                    raw_maker_amt = round_down(raw_maker_amt, 4)
+
+            maker_amount = to_token_decimals(raw_maker_amt)
+            taker_amount = to_token_decimals(raw_taker_amt)
+
+            return UtilsBuy, maker_amount, taker_amount
+        elif side == SELL:
+            raw_maker_amt = round_down(size, 2)
+
+            raw_taker_amt = raw_maker_amt * raw_price
+            if decimal_places(raw_taker_amt) > 4:
+                raw_taker_amt = round_up(raw_taker_amt, 8)
+                if decimal_places(raw_taker_amt) > 4:
+                    raw_taker_amt = round_down(raw_taker_amt, 4)
+
+            maker_amount = to_token_decimals(raw_maker_amt)
+            taker_amount = to_token_decimals(raw_taker_amt)
+
+            return UtilsSell, maker_amount, taker_amount
+        else:
+            raise ValueError(f"order_args.side must be '{BUY}' or '{SELL}'")
+
     def create_order(self, order_args: OrderArgs) -> SignedOrder:
         """
         Creates and signs an order
         """
-        if order_args.side == BUY:
-            side = 0
-            maker_amount = to_token_decimals(order_args.price * order_args.size)
-            taker_amount = to_token_decimals(order_args.size)
-        else:
-            side = 1
-            maker_amount = to_token_decimals(order_args.size)
-            taker_amount = to_token_decimals(order_args.price * order_args.size)
+        side, maker_amount, taker_amount = self.get_order_amounts(
+            order_args.side, order_args.size, order_args.price
+        )
 
         data = OrderData(
             maker=self.funder,
